@@ -28,6 +28,7 @@ class DashboardController extends AppController
 
         $assignments = $this->Canvas->assignments(14);
         $upcomingAssignments = [];
+        $notifications = $this->Canvas->notifications(451);
         foreach ($assignments as $assignment) {
             if (empty($assignment->due_at) || $assignment->due_at < time()) {
                 continue;
@@ -37,6 +38,6 @@ class DashboardController extends AppController
                 break;
             }
         }
-        $this->set(compact('assignments', 'upcomingAssignments'));
+        $this->set(compact('assignments', 'upcomingAssignments', 'notifications'));
     }
 }

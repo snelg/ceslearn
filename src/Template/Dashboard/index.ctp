@@ -82,6 +82,25 @@ $this->end();
 		</div>
 	</div>
 </div>
+<div class="panel panel-default">
+			<div class="panel-heading">Notifications</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Due</th>
+						<th>Name</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach($notifications as $notification): ?>
+						<tr>
+							<td><?= $notification->subject ?></td>
+							<td><?= $notification->last_message?></td>
+						</tr>
+					<?php endforeach ?>
+				</tbody>
+			</table>
+		</div>
 <script>
 <?php $this->Html->scriptStart(['block' => true]) ?>
 	$(document).ready(function() {

@@ -52,4 +52,15 @@ class CanvasTable extends Table
         });
         return $assignments;
     }
+    /**
+     * Get "conversations" for current user
+     */
+    public function notifications()
+    {
+        $response = $this->client()->get("/api/v1/conversations");
+        $notifications = $response->body('json_decode');
+        
+        return $notifications;
+    }
+
 }
