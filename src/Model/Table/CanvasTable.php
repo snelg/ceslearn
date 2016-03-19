@@ -1,7 +1,7 @@
 <?php
 namespace App\Model\Table;
 
-use Cake\Core\Configure;
+use Cake\Database\Log\LoggedQuery;
 use Cake\Network\Http\Client;
 use Cake\ORM\Table;
 
@@ -32,13 +32,28 @@ class CanvasTable extends Table
         return $this->_client;
     }
 
-    public function assignments($courseId)
-    {
-        $response = $this->client()->get("/api/v1/courses/{$courseId}/assignments?per_page=100");
-        $assignments = $response->body('json_decode');
-        if (empty($assignments)) {
-            return [];
+    public function get($url, $options = array()) {
+        $q = new LoggedQuery();
+        $q->query = $url;
+
+        $start = microtime(true);
+        $responseRaw = $this->client()->get($url);
+        $q->took = intval(1000.0 * (microtime(true) - $start));
+        if (empty($responseRaw) || !$responseRaw->isOk()) {
+            $q->error = 'No response';
         }
+
+        $response = $responseRaw->body('json_decode');
+
+        $q->numRows = count($response);
+        $this->_connection->logger()->log($q);
+
+        return $response;
+    }
+
+    public function assignments($courseId, $timeframe = null)
+    {
+        $assignments = $this->get("/api/v1/courses/{$courseId}/assignments?per_page=100");
         foreach ($assignments as &$assignment) {
             $assignment->due_at = empty($assignment->due_at) ? 0 : strtotime($assignment->due_at);
         }
@@ -57,9 +72,7 @@ class CanvasTable extends Table
      */
     public function notifications()
     {
-        $response = $this->client()->get("/api/v1/conversations");
-        $notifications = $response->body('json_decode');
-        
+        $notifications = $this->get("/api/v1/conversations?as_user_id=sis_user_id:mtm49");
         return $notifications;
     }
 

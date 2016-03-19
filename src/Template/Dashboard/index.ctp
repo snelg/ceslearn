@@ -44,7 +44,8 @@ $this->end();
 	<div class="col-sm-6">
 		<div class="panel panel-default">
 			<div class="panel-heading">Upcoming Assignments</div>
-			<table class="table">
+            <div class="panel-body" id="assignmentsLoading"><em>Loading...</em></div>
+			<table class="table" id="assignmentsList" style="display: none">
 				<thead>
 					<tr>
 						<th>Due</th>
@@ -52,12 +53,6 @@ $this->end();
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach($upcomingAssignments as $assignment): ?>
-						<tr>
-							<td><?= empty($assignment->due_at) ? '' : date('D, M j, Y', $assignment->due_at) ?></td>
-							<td><?= h($assignment->name) ?></td>
-						</tr>
-					<?php endforeach ?>
 				</tbody>
 			</table>
 		</div>
@@ -66,8 +61,9 @@ $this->end();
 <div class="row">
 	<div class="col-sm-6">
 		<div class="panel panel-default">
+			<div class="panel-heading">Calendar</div>
 			<div class="panel-body">
-				<div id="calendar"></div>
+                <div id="calendar"><em>Loading...</em></div>
 			</div>
 		</div>
 	</div>
@@ -83,24 +79,19 @@ $this->end();
 	</div>
 </div>
 <div class="panel panel-default">
-			<div class="panel-heading">Notifications</div>
-			<table class="table">
-				<thead>
-					<tr>
-						<th>Due</th>
-						<th>Name</th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach($notifications as $notification): ?>
-						<tr>
-							<td><?= $notification->subject ?></td>
-							<td><?= $notification->last_message?></td>
-						</tr>
-					<?php endforeach ?>
-				</tbody>
-			</table>
-		</div>
+    <div class="panel-heading">Notifications</div>
+    <div class="panel-body" id="notificationsLoading"><em>Loading...</em></div>
+    <table class="table" id="notificationsList" style="display: none">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
 <script>
 <?php $this->Html->scriptStart(['block' => true]) ?>
 	$(document).ready(function() {
@@ -120,35 +111,68 @@ $this->end();
 				})
 		})
 
-        $('#calendar').fullCalendar({
-			events: <?= json_encode((array)$assignments) ?>,
-            displayEventTime: false,
-			eventDataTransform: function(event) {
-                event.url = event.html_url;
-				event.title = event.name;
-				event.start = moment.unix(event.due_at);
-                return event;
-            },
-            eventRender: function(event, element) {
-				var tmp = document.createElement('div');
-				tmp.innerHTML = event.description;
-				var description = tmp.textContent || tmp.innerHTML;
-                if (description && description.length > 200) {
-                    description = description.substring(0, 200) + ' [...]';
-                }
-                element.qtip({
-                    content: {
-                        title: event.name,
-                        text: description},
-                    style: {classes: 'qtip-bootstrap'},
-                    show: {solo: true},
-                    position: {
-                        my: 'center left',
-                        at: 'top right'
+        $.ajax('<?= $this->Url->build(['prefix' => 'api', 'controller' => 'Assignments', 'action' => 'index']) ?>', {dataType: 'json'})
+            .done(function(data) {
+                populateAssignmentList(data);
+                $('#calendar').html('').fullCalendar({
+                    events: data,
+                    displayEventTime: false,
+                    eventDataTransform: function(event) {
+                        event.url = event.html_url;
+                        event.title = event.name;
+                        event.start = moment.unix(event.due_at);
+                        return event;
+                    },
+                    eventRender: function(event, element) {
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = event.description;
+                        var description = tmp.textContent || tmp.innerHTML;
+                        if (description && description.length > 200) {
+                            description = description.substring(0, 200) + ' [...]';
+                        }
+                        element.qtip({
+                            content: {
+                                title: event.name,
+                                text: description},
+                            style: {classes: 'qtip-bootstrap'},
+                            show: {solo: true},
+                            position: {
+                                my: 'center left',
+                                at: 'top right'
+                            }
+                        });
                     }
                 });
+            });
+        $.ajax('<?= $this->Url->build(['prefix' => 'api', 'controller' => 'Notifications', 'action' => 'index']) ?>', {dataType: 'json'})
+            .done(function(data) { populateNotificationList(data); });
+
+        function populateAssignmentList(data) {
+            $('div#assignmentsLoading').hide();
+            var listBody = $('table#assignmentsList').show().find('tbody');
+            var datedElements = data.filter(function(e) {
+                return (e.due_at && e.due_at > <?= time() ?>) ? true : false;
+            });
+            datedElements.sort(function(a, b) {
+                return a.due_at - b.due_at;
+            });
+            for (var i = 0; i < datedElements.length && i < 5; i++) {
+                var m = moment.unix(datedElements[i].due_at);
+                listBody.append('<tr><td>' + m.format('MMM D') + '</td><td>' + datedElements[i].name + '</td></tr>');
             }
-		});
+        }
+
+        function populateNotificationList(data) {
+            $('div#notificationsLoading').hide();
+            var listBody = $('table#notificationsList').show().find('tbody');
+            for (var i = 0; i < data.length && i < 5; i++) {
+                listBody.append('<tr><td>' + htmlEncode(data[i].subject) + '</td><td>' + htmlEncode(data[i].last_message) + '</td></tr>');
+            }
+        }
+
+        function htmlEncode(value) {
+            return $('<div/>').text(value).html();
+        }
 	});
 <?php $this->Html->scriptEnd() ?>
 </script>
