@@ -8,7 +8,6 @@ use Cake\ORM\Table;
 class CanvasTable extends Table
 {
     protected $_client;
-    protected $_clientConfig;
 
     public static function defaultConnectionName()
     {
@@ -32,7 +31,7 @@ class CanvasTable extends Table
         return $this->_client;
     }
 
-    public function get($url, $options = array()) {
+    public function get($url, $options = []) {
         $q = new LoggedQuery();
         $q->query = $url;
 
@@ -51,24 +50,21 @@ class CanvasTable extends Table
         return $response;
     }
 
-    public function assignments($courseId, $timeframe = null)
+    public function assignments($courseId)
     {
         $assignments = $this->get("/api/v1/courses/{$courseId}/assignments?per_page=100");
         foreach ($assignments as &$assignment) {
-            $assignment->due_at = empty($assignment->due_at) ? 0 : strtotime($assignment->due_at);
+            $assignment->id = 'canvas-' . $assignment->id;
+            $assignment->source = 'Canvas';
+            $assignment->start = empty($assignment->due_at) ? 0 : strtotime($assignment->due_at);
+            $assignment->url = empty($assignment->html_url) ? '' : $assignment->html_url;
+            $assignment->title = $assignment->name;
         }
-        usort($assignments, function ($a, $b) {
-            $dueA = empty($a->due_at) ? null : $a->due_at;
-            $dueB = empty($b->due_at) ? null : $b->due_at;
-            if ($dueA == $dueB) {
-                return 0;
-            }
-            return ($dueA < $dueB) ? -1 : 1;
-        });
         return $assignments;
     }
+
     /**
-     * Get "conversations" for current user
+     * Get "conversations" for current user... well, specifically for user mtm49 for now
      */
     public function notifications()
     {

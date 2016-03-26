@@ -267,6 +267,21 @@ return [
 //                'Authorization' => 'Bearer [hard-coded dev token]' //DEV Only
             ]
         ],
+
+        'brightspace' => [
+            'className' => 'Cake\Database\Connection',
+            'driver' => 'Cake\Database\Driver\Mysql',
+            'host' => 'byuprovo.brightspacetrial.com',
+            'port' => 443,
+            'scheme' => 'https',
+            'valenceInfo' => [
+                'appId'      => '',
+                'appKey'     => '',
+                'LP_Version' => '1.7',
+                'LE_Version' => '1.9'
+            ]
+        ],
+
         /**
          * The test connection is used during the test suite.
          */

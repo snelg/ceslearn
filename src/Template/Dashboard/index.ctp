@@ -11,7 +11,16 @@ $this->end();
 ?>
 <?= $this->Html->css(['jquery.qtip.min', 'cal/fullcalendar.min']) ?>
 <?= $this->Html->script(['jquery.qtip.min', 'cal/lib/moment.min', 'cal/fullcalendar.min'], ['block' => 'script']) ?>
-<h1 class="page-header">My Learning - Current</h1>
+<h1 class="page-header">
+    <div class="pull-right">
+        <?php if ($this->request->session()->read('Brightspace.Auth')) : ?>
+            <?= $this->Html->link('De-authorize Brightspace data', ['controller' => 'Brightspace', 'action' => 'deAuth'], ['class' => 'btn btn-primary']) ?>
+        <?php else : ?>
+            <?= $this->Html->link('Authorize Brightspace data', ['controller' => 'Brightspace', 'action' => 'auth'], ['class' => 'btn btn-primary']) ?>
+        <?php endif ?>
+    </div>
+    My Learning - Current
+</h1>
 <div class="row">
 	<div class="col-sm-6">
 		<div class="panel panel-default">
@@ -49,6 +58,7 @@ $this->end();
 				<thead>
 					<tr>
 						<th>Due</th>
+                        <th>Source</th>
 						<th>Name</th>
 					</tr>
 				</thead>
@@ -118,9 +128,7 @@ $this->end();
                     events: data,
                     displayEventTime: false,
                     eventDataTransform: function(event) {
-                        event.url = event.html_url;
-                        event.title = event.name;
-                        event.start = moment.unix(event.due_at);
+                        event.start = moment.unix(event.start);
                         return event;
                     },
                     eventRender: function(event, element) {
@@ -132,7 +140,7 @@ $this->end();
                         }
                         element.qtip({
                             content: {
-                                title: event.name,
+                                title: event.title,
                                 text: description},
                             style: {classes: 'qtip-bootstrap'},
                             show: {solo: true},
@@ -151,14 +159,14 @@ $this->end();
             $('div#assignmentsLoading').hide();
             var listBody = $('table#assignmentsList').show().find('tbody');
             var datedElements = data.filter(function(e) {
-                return (e.due_at && e.due_at > <?= time() ?>) ? true : false;
+                return (e.start && e.start > <?= time() ?>) ? true : false;
             });
             datedElements.sort(function(a, b) {
-                return a.due_at - b.due_at;
+                return a.start - b.start;
             });
             for (var i = 0; i < datedElements.length && i < 5; i++) {
-                var m = moment.unix(datedElements[i].due_at);
-                listBody.append('<tr><td>' + m.format('MMM D') + '</td><td>' + datedElements[i].name + '</td></tr>');
+                var m = moment.unix(datedElements[i].start);
+                listBody.append('<tr><td>' + m.format('MMM D') + '</td><td>' + datedElements[i].source + '</td><td>' + datedElements[i].title + '</td></tr>');
             }
         }
 
