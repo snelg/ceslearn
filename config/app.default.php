@@ -275,8 +275,8 @@ return [
             'port' => 443,
             'scheme' => 'https',
             'valenceInfo' => [
-                'appId'      => '',
-                'appKey'     => '',
+                'appId'      => '**REQUIRED**',
+                'appKey'     => '**REQUIRED**',
                 'LP_Version' => '1.7',
                 'LE_Version' => '1.9'
             ]
